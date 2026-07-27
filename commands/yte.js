@@ -4,14 +4,11 @@ module.exports = {
     name: 'yte',
     description: 'Xử lý sự cố y tế để kiếm Tín dụng',
 
-    async execute(message, args, userData) {
+    async execute(message, args, ctx) {
+        const { db } = ctx;
         const userId = message.author.id;
 
-        if (!userData.has(userId)) {
-            userData.set(userId, { credits: 1000, inventory: {}, pity: 0 });
-        }
-
-        const user = userData.get(userId);
+        await db.getOrCreateUser(userId);
 
         const problems = [
             {
@@ -41,10 +38,10 @@ module.exports = {
         const filter = m => ['A', 'B', 'C'].includes(m.content.toUpperCase()) && m.author.id === message.author.id;
         const collector = message.channel.createMessageCollector({ filter, time: 30000, max: 1 });
 
-        collector.on('collect', m => {
+        collector.on('collect', async m => {
             if (m.content.toUpperCase() === problem.answer) {
-                user.credits += 200;
-                message.channel.send(`✅ Xử lý chính xác! Bệnh nhân qua cơn nguy kịch. Bạn được thưởng 200 Tín dụng (Hiện có: ${user.credits}).`);
+                const newCredits = await db.addCredits(userId, 200);
+                message.channel.send(`✅ Xử lý chính xác! Bệnh nhân qua cơn nguy kịch. Bạn được thưởng 200 Tín dụng (Hiện có: ${newCredits}).`);
             } else {
                 message.channel.send("❌ Sai phác đồ rồi! Tình trạng bệnh nhân xấu đi nhanh chóng.");
             }
