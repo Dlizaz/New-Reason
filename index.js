@@ -10,7 +10,8 @@ const client = new Client({
     ]
 });
 
-client.once('clientReady', () => { ... });
+// Sử dụng clientReady chuẩn theo khuyến nghị mới của Discord.js
+client.once('clientReady', () => {
     console.log(`✅ Bot đã sẵn sàng hoạt động dưới tên: ${client.user.tag}`);
 });
 
