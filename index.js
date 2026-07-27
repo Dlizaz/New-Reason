@@ -1,43 +1,45 @@
-// handler/commandLoader.js
-// Tự động quét thư mục commands/ (không đệ quy vào commands/minigames,
-// vì đó là DATA riêng cho từng ngành, không phải lệnh độc lập) và
-// đăng ký mọi file .js vào client.commands.
-//
-// Mỗi file lệnh phải export dạng:
-//   module.exports = {
-//       name: 'chon',              // gõ !chon để gọi
-//       description: '...',
-//       async execute(message, args, ctx) { ... }
-//   }
-// `ctx` là object tiện ích được truyền xuống (db, professions, client...).
+// index.js
+// Entry point chính: khởi tạo Discord Client, kết nối PostgreSQL,
+// nạp toàn bộ command trong commands/ và lắng nghe sự kiện messageCreate.
 
-const fs = require('fs');
-const path = require('path');
-const { Collection } = require('discord.js');
+require('dotenv').config();
 
-function loadCommands(client) {
-    client.commands = new Collection();
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { loadCommands } = require('./handler/commandLoader');
+const messageCreateHandler = require('./event/messageCreate');
+const db = require('./database/db');
 
-    const commandsPath = path.join(__dirname, '..', 'commands');
-    const files = fs
-        .readdirSync(commandsPath, { withFileTypes: true })
-        .filter((entry) => entry.isFile() && entry.name.endsWith('.js'));
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences,
+    ],
+    partials: [Partials.Channel, Partials.Message],
+});
 
-    for (const file of files) {
-        const filePath = path.join(commandsPath, file.name);
-        delete require.cache[require.resolve(filePath)]; // hỗ trợ hot-reload khi dev
-        const command = require(filePath);
+async function main() {
+    // 1. Nạp toàn bộ lệnh vào client.commands
+    loadCommands(client);
 
-        if (!command.name || typeof command.execute !== 'function') {
-            console.warn(`⚠️  Bỏ qua ${file.name}: thiếu "name" hoặc "execute".`);
-            continue;
-        }
+    // 2. Đảm bảo bảng users/inventory tồn tại trên PostgreSQL
+    await db.init();
 
-        client.commands.set(command.name, command);
-        console.log(`   ↳ Đã nạp lệnh: !${command.name}`);
-    }
+    // 3. Lắng nghe sự kiện tin nhắn (prefix "!")
+    client.on('messageCreate', (message) => messageCreateHandler(client, message, db));
 
-    console.log(`✅ Đã nạp tổng cộng ${client.commands.size} lệnh.`);
+    // 4. Log khi bot online thành công
+    client.once('ready', () => {
+        console.log(`✅ Đã đăng nhập với tên ${client.user.tag}`);
+    });
+
+    // 5. Đăng nhập vào Discord bằng token trong biến môi trường
+    await client.login(process.env.TOKEN);
 }
 
-module.exports = { loadCommands };
+main().catch((err) => {
+    console.error('❌ Lỗi khởi động bot:', err);
+    process.exit(1);
+});
