@@ -3,7 +3,7 @@ const { EmbedBuilder } = require('discord.js');
 const RARITY = require('../data/rarityConfig');
 
 module.exports = {
-    name: 'inventory',
+    name: 'bag',
     description: 'Xem túi đồ vật phẩm đã sở hữu.',
 
     async execute(message, args, ctx) {
