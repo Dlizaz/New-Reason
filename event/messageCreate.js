@@ -1,17 +1,6 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const { EmbedBuilder } = require('discord.js');
 
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-
-// Khởi tạo Client với các quyền (intents) cần thiết để đọc tin nhắn
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent // Bắt buộc phải có để bot đọc được nội dung lệnh (như !roll, !farm)
-    ]
-});
-
-// Database giả lập (lưu tạm trên RAM, thực tế nên dùng MongoDB/MySQL/SQLite)
+// Database giả lập (lưu tạm trên RAM)
 const userData = new Map();
 
 // Danh sách Tướng/Nhân sự (Gacha Pool)
@@ -22,14 +11,8 @@ const ROSTER = [
     { name: "Thực Tập Sinh IT", rarity: "R", role: "Công Nghệ", color: 0x3498db }
 ];
 
-// Sự kiện khi bot khởi động thành công
-client.once('ready', () => {
-    console.log(`✅ Bot đã sẵn sàng hoạt động dưới tên: ${client.user.tag}`);
-});
-
-// Hàm xử lý chính khi có tin nhắn tới
-client.on('messageCreate', async (message) => {
-    // Bỏ qua tin nhắn của bot khác để tránh lặp vô hạn
+module.exports = async (client, message) => {
+    // Bỏ qua tin nhắn của bot khác
     if (message.author.bot) return;
 
     const userId = message.author.id;
@@ -40,24 +23,19 @@ client.on('messageCreate', async (message) => {
     }
     
     const user = userData.get(userId);
-    // Tách tin nhắn thành mảng để lấy lệnh
     const args = message.content.trim().split(/ +/);
     const command = args[0].toLowerCase();
 
-    // ==========================================
     // 1. LỆNH GACHA (!roll)
-    // ==========================================
     if (command === '!roll') {
         if (user.credits < 100) {
             return message.reply("❌ Bạn không đủ Tín Dụng Năng Lượng (cần 100) để chiêu mộ!");
         }
 
-        // Trừ tiền và random thẻ
         user.credits -= 100;
         const gachaResult = ROSTER[Math.floor(Math.random() * ROSTER.length)];
         user.inventory.push(gachaResult.name);
 
-        // Tạo Embed hiển thị thẻ bài
         const embed = new EmbedBuilder()
             .setTitle("🌟 CHIÊU MỘ THÀNH CÔNG!")
             .setDescription("Tín hiệu tần số đã kết nối với một nhân sự mới.")
@@ -68,16 +46,11 @@ client.on('messageCreate', async (message) => {
                 { name: "Chuyên Ngành", value: gachaResult.role, inline: true }
             )
             .setFooter({ text: `Tín dụng còn lại: ${user.credits}` });
-            
-        // Chèn link ảnh Digital Painting của bạn vào đây (Bỏ comment dòng dưới để dùng)
-        // embed.setImage('URL_ẢNH_CỦA_BẠN');
 
         return message.channel.send({ embeds: [embed] });
     }
 
-    // ==========================================
     // 2. LỆNH NÔNG NGHIỆP (!farm)
-    // ==========================================
     if (command === '!farm') {
         const problems = [
             {
@@ -92,7 +65,6 @@ client.on('messageCreate', async (message) => {
             }
         ];
 
-        // Chọn ngẫu nhiên 1 câu hỏi
         const problem = problems[Math.floor(Math.random() * problems.length)];
 
         const embed = new EmbedBuilder()
@@ -105,10 +77,7 @@ client.on('messageCreate', async (message) => {
 
         await message.channel.send({ embeds: [embed] });
 
-        // Bộ lọc: chỉ nhận tin nhắn từ người gõ lệnh và nội dung phải là A, B, hoặc C
         const filter = m => ['A', 'B', 'C'].includes(m.content.toUpperCase()) && m.author.id === message.author.id;
-        
-        // Chờ phản hồi trong 30 giây
         const collector = message.channel.createMessageCollector({ filter, time: 30000, max: 1 });
 
         collector.on('collect', m => {
@@ -121,13 +90,9 @@ client.on('messageCreate', async (message) => {
         });
 
         collector.on('end', collected => {
-            // Nếu sau 30s không ai trả lời
             if (collected.size === 0) {
                 message.channel.send(`⌛ <@${userId}> Hết thời gian xử lý sự cố. Cây trồng đã hư hại!`);
             }
         });
     }
-});
-
-// Đăng nhập Bot bằng Token (Thay chuỗi bên dưới bằng Token bot của bạn)
-client.login(process.env.TOKEN);
+};
