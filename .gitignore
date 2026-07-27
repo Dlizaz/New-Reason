@@ -1,14 +1,8 @@
-# Bỏ qua thư mục chứa các thư viện (rất nặng và tự tải lại được)
-node_modules/
+# Xóa file .env (hoặc .evn) khỏi bộ nhớ theo dõi của Git (không xóa file dưới máy bạn)
+git rm --cached .env .evn 2>/dev/null || true
 
-# Bỏ qua file chứa thông tin bảo mật (Token, Database,...)
-.env
+# Commit thay đổi này
+git commit -m "Chann va xoa file env khoi git tracking"
 
-# Bỏ qua các file log lỗi của hệ thống
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Bỏ qua các file hệ điều hành tự tạo ra (Mac/Windows)
-.DS_Store
-Thumbs.db
+# Đẩy code sạch lên GitHub
+git push origin main
