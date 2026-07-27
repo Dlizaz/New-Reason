@@ -10,7 +10,7 @@ const client = new Client({
     ]
 });
 
-client.once('ready', () => {
+client.once('clientReady', () => { ... });
     console.log(`✅ Bot đã sẵn sàng hoạt động dưới tên: ${client.user.tag}`);
 });
 
