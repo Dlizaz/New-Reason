@@ -1,0 +1,14 @@
+# Bỏ qua thư mục chứa các thư viện (rất nặng và tự tải lại được)
+node_modules/
+
+# Bỏ qua file chứa thông tin bảo mật (Token, Database,...)
+.env
+
+# Bỏ qua các file log lỗi của hệ thống
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bỏ qua các file hệ điều hành tự tạo ra (Mac/Windows)
+.DS_Store
+Thumbs.db
