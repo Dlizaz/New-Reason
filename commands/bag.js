@@ -1,4 +1,4 @@
-// commands/inventory.js
+// commands/bag.js
 const { EmbedBuilder } = require('discord.js');
 const RARITY = require('../data/rarityConfig');
 
